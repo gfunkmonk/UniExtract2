@@ -226,6 +226,7 @@ Const $hlp = "helpdeco.exe"
 Const $innoextract = Quote($bindir & "innoextract.exe", True)
 Const $innounp = "innounp.exe"
 Const $is6cab = "i6comp.exe"
+Const $isx = "ISx.exe"
 Const $isxunp = "IsXunpack.exe"
 Const $isz = "unisz.exe"
 Const $kgb = "kgb\kgb2_console.exe"
@@ -2726,12 +2727,22 @@ Func extract($arctype, $arcdisp = 0, $additionalParameters = "", $returnSuccess 
 			CheckTotalObserver($arcdisp)
 			CheckInstallShieldCab()
 
-			Local $aOptions = ["InstallShield " & t('TERM_INSTALLER'), t('METHOD_EXTRACTION_RADIO', 'isxunpack'), t('METHOD_SWITCH_RADIO', 'InstallShield /b'), t('METHOD_NOT_INSTALLER_RADIO', "InstallShield")]
+			Local $aOptions = ["InstallShield " & t('TERM_INSTALLER'), t('METHOD_EXTRACTION_RADIO', 'isx'), t('METHOD_EXTRACTION_RADIO', 'isxunpack'), t('METHOD_SWITCH_RADIO', 'InstallShield /b'), t('METHOD_NOT_INSTALLER_RADIO', "InstallShield")]
 			$iChoice = GUI_MethodSelect($aOptions, $arcdisp)
 
 			Switch $iChoice
-				; Extract using isxunpack
+				; Extract using isx
 				Case 1
+					_FileMove($file, $outdir)
+					Run(_MakeCommand($isx & ' "' & $outdir & '\' & $filenamefull & '"', True), $outdir)
+					WinWait(@ComSpec)
+					WinActivate(@ComSpec)
+					Send("{ENTER}")
+					ProcessWaitClose($isx)
+					_FileMove($outdir & '\' & $filenamefull, $filedir)
+
+				; Extract using isxunpack
+				Case 2
 					_FileMove($file, $outdir)
 					Run(_MakeCommand($isxunp & ' "' & $outdir & '\' & $filenamefull & '"', True), $outdir)
 					WinWait(@ComSpec)
@@ -2741,7 +2752,7 @@ Func extract($arctype, $arcdisp = 0, $additionalParameters = "", $returnSuccess 
 					_FileMove($outdir & '\' & $filenamefull, $filedir)
 
 				; Try to extract MSI using cache switch
-				Case 2
+				Case 3
 					; Run installer and wait for temp files to be copied
 					_CreateTrayMessageBox(t('INIT_WAIT'))
 					DirCreate($tempoutdir)
@@ -2793,7 +2804,7 @@ Func extract($arctype, $arcdisp = 0, $additionalParameters = "", $returnSuccess 
 					EndIf
 
 				; Not InstallShield
-				Case 3
+				Case 4
 					Return False
 			EndSwitch
 
